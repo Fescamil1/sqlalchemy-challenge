@@ -52,3 +52,21 @@ def precipitation():
     precip_dict = {date: prcp for date, prcp in precipitation}
     return jsonify(precip_dict)
 
+@app.route("/api/v1.0/stations")
+def stations():
+   #Return a JSON list of stations from the dataset.
+    station_results = session.query(Station.id, Station.station,Station.name,Station.latitude,Station.longitude,Station.elevation).all()
+    
+    #create dictionary of results
+    for id, station,name,lat,lon,el in station_results:
+        station_dict = {}
+        station_dict["ID"] = id
+        station_dict["Station"] = station
+        station_dict["Name"] = name
+        station_dict["Lat"] = lat
+        station_dict["Lon"] = lon
+        station_dict["Elevation"] = el
+        stations.append(station_dict)
+        
+    # Return JSON representation of dictionary    
+    return jsonify(stations)
