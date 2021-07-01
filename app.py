@@ -18,8 +18,6 @@ Base.prepare(engine, reflect = True)
 Station = Base.classes.station
 Measurement = Base.classes.measurement
 
-session = Session(engine)
-
 #Set up Flask
 app = Flask(__name__)
 
@@ -38,6 +36,8 @@ def welcome():
 #convert the query results into a dictionary
 @app.route("/api/v1.0/precipitation")
 def precipitation():
+    session = Session(engine)
+
     # Calculate the date 1 year ago from the last data point in the database
     #find the most recent date
     mostrecent_date = session.query(Measurement.date).order_by(Measurement.date.desc()).first()
@@ -48,25 +48,26 @@ def precipitation():
     # Query for the date and precipitation for the last year
     precipitation = session.query(Measurement.date, Measurement.prcp).filter(Measurement.date >= query_date).order_by(Measurement.date).all()
 
+    session.close()
+
     # Return JSON representation of dictionary
     precip_dict = {date: prcp for date, prcp in precipitation}
     return jsonify(precip_dict)
 
 @app.route("/api/v1.0/stations")
 def stations():
+    session = Session(engine)
    #Return a JSON list of stations from the dataset.
-    station_results = session.query(Station.id, Station.station,Station.name,Station.latitude,Station.longitude,Station.elevation).all()
+  
+    station_results=session.query(Station.station).all()
+
+    session.close()
     
-    #create dictionary of results
-    for id, station,name,lat,lon,el in station_results:
-        station_dict = {}
-        station_dict["ID"] = id
-        station_dict["Station"] = station
-        station_dict["Name"] = name
-        station_dict["Lat"] = lat
-        station_dict["Lon"] = lon
-        station_dict["Elevation"] = el
-        stations.append(station_dict)
-        
+    # Unravel results into a 1D array and convert to a list
+    stations = list(np.ravel(station_results))
+
     # Return JSON representation of dictionary    
     return jsonify(stations)
+
+if __name__ == '__main__':
+    app.run(debug=True)
