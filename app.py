@@ -59,14 +59,23 @@ def stations():
     session = Session(engine)
    #Return a JSON list of stations from the dataset.
   
-    station_results=session.query(Station.station).all()
+    station_results=session.query(Station.id,Station.station,Station.name,Station.latitude,Station.longitude,Station.elevation).all()
 
     session.close()
-    
-    # Unravel results into a 1D array and convert to a list
-    stations = list(np.ravel(station_results))
 
-    # Return JSON representation of dictionary    
+    # Return JSON representation of dictionary
+
+    stations = []
+    for id, station,name,lat,lon,el in station_results:
+        station_dict = {}
+        station_dict["ID"] = id
+        station_dict["Station"] = station
+        station_dict["Name"] = name
+        station_dict["Latitude"] = lat
+        station_dict["Longitude"] = lon
+        station_dict["Elevation"] = el
+        stations.append(station_dict)
+     
     return jsonify(stations)
 
 if __name__ == '__main__':
