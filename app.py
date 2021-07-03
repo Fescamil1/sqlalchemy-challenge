@@ -57,8 +57,8 @@ def precipitation():
 @app.route("/api/v1.0/stations")
 def stations():
     session = Session(engine)
-   #Return a JSON list of stations from the dataset.
-  
+
+    #list of stations from the dataset.
     station_results=session.query(Station.id,Station.station,Station.name,Station.latitude,Station.longitude,Station.elevation).all()
 
     session.close()
@@ -77,6 +77,35 @@ def stations():
         stations.append(station_dict)
      
     return jsonify(stations)
+
+
+@app.route("/api/v1.0/tobs")
+def tobs():
+    session = Session(engine)
+
+    #calculate the date 1 year  from the most recent date found in the db
+    query_date = dt.date(2017, 8, 23) - dt.timedelta(days=365)
+
+    # List the stations and the counts in descending order. 1st one will be most active
+    active_stations = session.query(Measurement.station, func.count()).group_by(Measurement.station).order_by(func.count().desc()).all()
+
+    #select most active station 1st 
+    most_active=active_stations[0][0]
+
+    # Query the dates and temperature observations of the most active station for the last year of data.
+    temps = session.query(Measurement.date, Measurement.tobs).filter(Measurement.station == most_active).filter(Measurement.date >= query_date).all()
+    session.close()
+    
+    tobs_list = []
+    #turn results into a dict
+    for date, tobs in temps:
+        tobs_dict = {}
+        tobs_dict["Date"] = date
+        tobs_dict["Tobs"] = tobs
+        tobs_list.append(tobs_dict)
+    
+    return jsonify(tobs_list)
+
 
 if __name__ == '__main__':
     app.run(debug=True)
